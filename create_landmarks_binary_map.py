@@ -1,67 +1,92 @@
 #coding=utf8
 import cv2  
 import dlib  
-import numpy  
-import sys  
+import numpy as np
+import sys
+import scipy.misc
+import scipy.ndimage as ndimage
+
 def get_Landmarks(image_name):
-    root = '/home/deanir/predict-facial-attractiveness-master/'
+    root = '/home/deanir/classify_beauty_rate-master/'
     PREDICTOR_PATH = root + "data/shape_predictor_68_face_landmarks.dat"
+    NUM_LANDMARKS = 68
 
-    #1.使用dlib自带的frontal_face_detector作为我们的人脸提取器
     detector = dlib.get_frontal_face_detector()
-
-    #2.使用官方提供的模型构建特征提取器
     predictor = dlib.shape_predictor(PREDICTOR_PATH)
 
-    # class NoFaces(Exception):
-    #     pass
-    path = "/home/deanir/datasets/400faces/img/"
+    #path = "/home/deanir/datasets/400faces/img_scaled/"
+    path = "../image/"
     im = cv2.imread(path + image_name)
-    #im = cv2.imread(root + "image/test.jpg")
-    #im = cv2.imread(root + "image/nir.jpg")
+    im_size = im.shape
+    print("im_size: {}".format(im_size))
 
-
-    #3.使用detector进行人脸检测 rects为返回的结果
     rects = detector(im,1)
 
-    #4.输出人脸数，dets的元素个数即为脸的个数
     if len(rects) >= 1:
         print("{} faces detected".format(len(rects)))
-
     if len(rects) == 0:
         raise NoFaces
 
-    f = open(root + 'data/landmarks.txt','w')
     for i in range(len(rects)):
+        landmarks = np.matrix([[p.x,p.y] for p in predictor(im,rects[i]).parts()])
 
-        #5.使用predictor进行人脸关键点识别
-        landmarks = numpy.matrix([[p.x,p.y] for p in predictor(im,rects[i]).parts()])
-        print(landmarks)
-        im = im.copy()
+    binary_image = np.zeros((im_size[0],im_size[1]))
+    for tuple in landmarks:
+        y,x = tuple[0,0], tuple[0,1]
+        if(x >= 255 or y>= 255):
+            print("({},{})".format(x,y))
+        else:
+            binary_image[x,y] = 255
+    scipy.misc.imsave(image_name.split(".")[0] + '_landmarks_.jpg', binary_image)
 
-        #使用enumerate 函数遍历序列中的元素以及它们的下标
-        for idx,point in enumerate(landmarks):
-            pos = (point[0,0],point[0,1])
+    color = (255, 0, 0)
 
-            f.write(str(point[0,0]))
-            f.write(',')
-            f.write(str(point[0,1]))
-            f.write(',')
-            #cv2.putText(im,str(idx),pos,
-                        #fontFace=cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
-                        #fontScale=0.4,
+    # pt1 = landmarks[0]
+    # pt2 = landmarks[1]
+    #
+    #
+    # print(pt1)
+    # binary_lines = cv2.line(binary_image, (pt1[0,0],pt1[0,1]), (pt2[0,0],pt2[0,1]), color, thickness=1, lineType=8, shift=0)
+    #print(type(im2))
 
-                        #color=(0,0,255))
-            #6.绘制特征点
-            cv2.circle(im,pos,3,color=(0,255,0))
-        f.write('\n')
-    print ("landmarks,get!")
-    # cv2.namedWindow("im",2)
-    # cv2.imshow("im",im)
-    # cv2.waitKey(1000)
 
+    #scipy.misc.imsave(image_name.split(".")[0] + '_binary_lines.jpg', binary_lines)
+    binary_lines = connect_lines_in_range(0, 16, landmarks, binary_image,color)
+    binary_lines = connect_lines_in_range(17, 21, landmarks, binary_lines, color)
+    binary_lines = connect_lines_in_range(22, 26, landmarks, binary_lines, color)
+    binary_lines = connect_lines_in_range(27, 30, landmarks, binary_lines, color)
+    binary_lines = connect_lines_in_range(31, 35, landmarks, binary_lines, color)
+    binary_lines = connect_lines_in_range(36, 41, landmarks, binary_lines, color)
+    ##connect
+    binary_lines = cv2.line(binary_lines, (landmarks[36][0, 0], landmarks[36][0, 1]), (landmarks[41][0, 0], landmarks[41][0, 1]), color, thickness=1,
+                            lineType=8, shift=0)
+    binary_lines = connect_lines_in_range(42, 47, landmarks, binary_lines, color)
+    ##connect
+    binary_lines = cv2.line(binary_lines, (landmarks[42][0, 0], landmarks[42][0, 1]),
+                            (landmarks[47][0, 0], landmarks[47][0, 1]), color, thickness=1,
+                            lineType=8, shift=0)
+    binary_lines = connect_lines_in_range(48, 54, landmarks, binary_lines, color)
+    binary_lines = connect_lines_in_range(55, 59, landmarks, binary_lines, color)
+    binary_lines = connect_lines_in_range(60, 67, landmarks, binary_lines, color)
+    ##connect
+    binary_lines = cv2.line(binary_lines, (landmarks[60][0, 0], landmarks[60][0, 1]),
+                            (landmarks[67][0, 0], landmarks[67][0, 1]), color, thickness=1,
+                            lineType=8, shift=0)
+
+
+
+    scipy.misc.imsave(image_name.split(".")[0] + '_binary_lines.jpg', binary_lines)
+
+
+def connect_lines_in_range(start,end, landmarks,input_image,color):
+    for i in range(start,end):
+        pt = landmarks[i]
+        pt_next = landmarks[i+1]
+        binary_lines = cv2.line(input_image, (pt[0, 0], pt[0, 1]), (pt_next[0, 0], pt_next[0, 1]), color, thickness=1,
+                                lineType=8, shift=0)
+    return binary_lines
 def main():
-    image_name = "1b.jpg"
+    image_name = "dean.jpg"
     get_Landmarks(image_name)
 
 if __name__=="__main__":
