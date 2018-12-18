@@ -1,6 +1,6 @@
 #coding=utf8
-import cv2  
-import dlib  
+import cv2
+import dlib
 import numpy as np
 import sys
 import scipy.misc
@@ -14,7 +14,7 @@ def get_Landmarks(image_name):
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor(PREDICTOR_PATH)
 
-    #path = "/home/deanir/datasets/400faces/img_scaled/"
+
     path = "../image/"
     im = cv2.imread(path + image_name)
     im_size = im.shape
@@ -39,36 +39,28 @@ def get_Landmarks(image_name):
             binary_image[x,y] = 255
     scipy.misc.imsave(image_name.split(".")[0] + '_landmarks_.jpg', binary_image)
 
-    color = (255, 0, 0)
+    return binary_image
 
-    # pt1 = landmarks[0]
-    # pt2 = landmarks[1]
-    #
-    #
-    # print(pt1)
-    # binary_lines = cv2.line(binary_image, (pt1[0,0],pt1[0,1]), (pt2[0,0],pt2[0,1]), color, thickness=1, lineType=8, shift=0)
-    #print(type(im2))
+def get_facial_outlines(binary_image,color = (255, 0, 0)):
 
-
-    #scipy.misc.imsave(image_name.split(".")[0] + '_binary_lines.jpg', binary_lines)
     binary_lines = connect_lines_in_range(0, 16, landmarks, binary_image,color)
     binary_lines = connect_lines_in_range(17, 21, landmarks, binary_lines, color)
     binary_lines = connect_lines_in_range(22, 26, landmarks, binary_lines, color)
     binary_lines = connect_lines_in_range(27, 30, landmarks, binary_lines, color)
     binary_lines = connect_lines_in_range(31, 35, landmarks, binary_lines, color)
     binary_lines = connect_lines_in_range(36, 41, landmarks, binary_lines, color)
-    ##connect
+    ##close circle
     binary_lines = cv2.line(binary_lines, (landmarks[36][0, 0], landmarks[36][0, 1]), (landmarks[41][0, 0], landmarks[41][0, 1]), color, thickness=1,
                             lineType=8, shift=0)
     binary_lines = connect_lines_in_range(42, 47, landmarks, binary_lines, color)
-    ##connect
+    ##close circle
     binary_lines = cv2.line(binary_lines, (landmarks[42][0, 0], landmarks[42][0, 1]),
                             (landmarks[47][0, 0], landmarks[47][0, 1]), color, thickness=1,
                             lineType=8, shift=0)
     binary_lines = connect_lines_in_range(48, 54, landmarks, binary_lines, color)
     binary_lines = connect_lines_in_range(55, 59, landmarks, binary_lines, color)
     binary_lines = connect_lines_in_range(60, 67, landmarks, binary_lines, color)
-    ##connect
+    ##close circle
     binary_lines = cv2.line(binary_lines, (landmarks[60][0, 0], landmarks[60][0, 1]),
                             (landmarks[67][0, 0], landmarks[67][0, 1]), color, thickness=1,
                             lineType=8, shift=0)
@@ -76,7 +68,7 @@ def get_Landmarks(image_name):
 
 
     scipy.misc.imsave(image_name.split(".")[0] + '_binary_lines.jpg', binary_lines)
-
+    return binary_lines
 
 def connect_lines_in_range(start,end, landmarks,input_image,color):
     for i in range(start,end):
@@ -86,7 +78,7 @@ def connect_lines_in_range(start,end, landmarks,input_image,color):
                                 lineType=8, shift=0)
     return binary_lines
 def main():
-    image_name = "dean.jpg"
+    image_name = "nir.jpg"
     get_Landmarks(image_name)
 
 if __name__=="__main__":
